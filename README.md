@@ -58,7 +58,7 @@ Cat Tinder — это увлекательное приложение, кото�
 
 Скачать приложение
 -----
-[📥 Скачать APK](https://github.com/drtcrz23/cattinder/releases/latest/download/app-realese.apk)
+[📥 Скачать APK](https://github.com/drtcrz23/cattinder/releases/latest/download/app-release.apk)
 
 Технологии
 -----
