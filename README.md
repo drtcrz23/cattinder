@@ -48,13 +48,15 @@ Cat Tinder — это увлекательное приложение, кото�
 
 Интерфейс
 -----
-![Главный экран](assets/screenshots/home_screen)
+![Главный экран](assets/screenshots/home_screen.jpg)
 
-![Понравившиеся котики](assets/screenshots/favorite_screen)
+![Понравившиеся котики](assets/screenshots/favorite_screen.jpg)
 
-![Описание котика](assets/screenshots/description_screen)
+![Описание котика](assets/screenshots/description_screen.jpg)
 
-![Страница загрузки](assets/screenshots/loading_screen)
+![Страница загрузки](assets/screenshots/loading_screen.jpg)
+
+![Главный экран](assets/screenshots/home_screen_after_like.jpg)
 
 Скачать приложение
 -----
