@@ -19,10 +19,7 @@ class LoadingScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 30),
-            const SpinKitChasingDots(
-              color: Colors.deepPurple,
-              size: 40.0,
-            ),
+            const SpinKitChasingDots(color: Colors.deepPurple, size: 40.0),
             const SizedBox(height: 20),
             Text(
               'Looking for a new cat...',

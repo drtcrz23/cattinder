@@ -12,10 +12,11 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final ValueNotifier<List<Cat>> _likedCatsNotifier = ValueNotifier([]);
   final ValueNotifier<int> _likeCounter = ValueNotifier(0);
   final ValueNotifier<int> _dislikeCounter = ValueNotifier(0);
@@ -53,18 +54,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
       final cat = await ApiService.fetchRandomCat();
       if (cat == null) {
-        throw Exception("Failed to load a cat with breed.");
+        throw Exception('Failed to load a cat with breed.');
       }
+      if (!mounted) return; // Check if widget is still in the tree
       await precacheImage(NetworkImage(cat.imageUrl), context);
+      if (!mounted) return; // Check again before calling setState
       setState(() {
         _currentCat = cat;
         _isLoading = false;
       });
+
       _animationController.forward(from: 0);
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -100,7 +107,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _removeLike(Cat cat) {
     setState(() {
-      _likedCatsNotifier.value = _likedCatsNotifier.value.where((likedCat) => likedCat.id != cat.id).toList();
+      _likedCatsNotifier.value =
+          _likedCatsNotifier.value
+              .where((likedCat) => likedCat.id != cat.id)
+              .toList();
       _likeCounter.value--; // Уменьшаем счетчик лайков
     });
   }
@@ -111,19 +121,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Cat Tinder 🐾'),
-        backgroundColor: Colors.white.withOpacity(0.9),
+        backgroundColor: Colors.white.withAlpha(230),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.pinkAccent, size: 30),
+            icon: const Icon(
+              Icons.favorite,
+              color: Colors.pinkAccent,
+              size: 30,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => FavoritesScreen(
-                    likedCatsNotifier: _likedCatsNotifier,
-                    onRemoveLike: _removeLike,
-                  ),
+                  builder:
+                      (context) => FavoritesScreen(
+                        likedCatsNotifier: _likedCatsNotifier,
+                        onRemoveLike: _removeLike,
+                      ),
                 ),
               );
             },
@@ -140,11 +155,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
-          child: _isLoading
-              ? const LoadingScreen()
-              : _errorMessage != null
-              ? _buildErrorMessage()
-              : _buildContent(),
+          child:
+              _isLoading
+                  ? const LoadingScreen()
+                  : _errorMessage != null
+                  ? _buildErrorMessage()
+                  : _buildContent(),
         ),
       ),
     );
@@ -167,7 +183,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.deepPurpleAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
             onPressed: _fetchNewCat,
             child: const Padding(
@@ -187,7 +205,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
           child: ScaleTransition(
-            scale: CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+            scale: CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeOutBack,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -195,7 +216,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   onTap: _openDetails,
                   child: Dismissible(
                     key: ValueKey(_currentCat?.id ?? 'cat_card'),
-                    direction: DismissDirection.horizontal,
                     onDismissed: (direction) {
                       if (direction == DismissDirection.startToEnd) {
                         _handleLike();
@@ -205,40 +225,57 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     },
                     background: Container(
                       decoration: BoxDecoration(
-                        color: Colors.greenAccent.shade100.withOpacity(0.4),
+                        color: Colors.greenAccent.shade100.withAlpha(102),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.only(left: 30),
-                      child: const Icon(Icons.favorite, size: 40, color: Colors.green),
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 40,
+                        color: Colors.green,
+                      ),
                     ),
                     secondaryBackground: Container(
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.shade100.withOpacity(0.4),
+                        color: Colors.redAccent.shade100.withAlpha(102),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 30),
-                      child: const Icon(Icons.close, size: 40, color: Colors.red),
+                      child: const Icon(
+                        Icons.close,
+                        size: 40,
+                        color: Colors.red,
+                      ),
                     ),
                     child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       elevation: 10,
-                      shadowColor: Colors.deepPurple.withOpacity(0.3),
+                      shadowColor: Colors.deepPurple.withAlpha(77),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
                             child: CachedNetworkImage(
                               imageUrl: _currentCat!.imageUrl,
                               height: 300,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey[200],
-                                child: const Center(child: CircularProgressIndicator()),
-                              ),
-                              errorWidget: (context, url, error) => _buildPlaceholderImage(),
+                              placeholder:
+                                  (context, url) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                              errorWidget:
+                                  (context, url, error) =>
+                                      _buildPlaceholderImage(),
                             ),
                           ),
                           Padding(
@@ -246,11 +283,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             child: Text(
                               _currentCat!.breedName,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
                             child: ValueListenableBuilder<int>(
                               valueListenable: _likeCounter,
                               builder: (context, likeCount, _) {
@@ -293,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Icon(Icons.image_not_supported, size: 60, color: Colors.grey[600]),
           const SizedBox(height: 10),
           Text(
-            "Image not available",
+            'Image not available',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],

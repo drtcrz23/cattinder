@@ -1,11 +1,4 @@
 class Cat {
-  final String id;
-  final String imageUrl;
-  final String breedName;
-  final String? description;
-  final String? temperament;
-  final String? origin;
-
   Cat({
     required this.id,
     required this.imageUrl,
@@ -25,4 +18,11 @@ class Cat {
       origin: json['breeds']?[0]['origin'],
     );
   }
+
+  final String id;
+  final String imageUrl;
+  final String breedName;
+  final String? description;
+  final String? temperament;
+  final String? origin;
 }

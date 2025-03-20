@@ -12,8 +12,7 @@ class CatTinderApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Кототиндер',
-      theme: ThemeData(primarySwatch: Colors.blue
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomeScreen(),
     );
   }

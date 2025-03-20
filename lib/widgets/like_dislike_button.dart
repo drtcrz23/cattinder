@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 
 class LikeButtons extends StatelessWidget {
-  final VoidCallback onLike;
-  final VoidCallback onDislike;
-  final ValueNotifier<int> likeCounter;
-  final ValueNotifier<int> dislikeCounter;
-  final bool isDisabled;
-
   const LikeButtons({
     super.key,
     required this.onLike,
@@ -15,6 +9,12 @@ class LikeButtons extends StatelessWidget {
     required this.dislikeCounter,
     this.isDisabled = false, // По умолчанию false
   });
+
+  final VoidCallback onLike;
+  final VoidCallback onDislike;
+  final ValueNotifier<int> likeCounter;
+  final ValueNotifier<int> dislikeCounter;
+  final bool isDisabled;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class LikeButtons extends StatelessWidget {
                 valueListenable: dislikeCounter,
                 builder: (context, count, child) {
                   return Text(
-                    "dislikes: $count",
+                    'dislikes: $count',
                     style: const TextStyle(fontSize: 14),
                   );
                 },
@@ -51,7 +51,7 @@ class LikeButtons extends StatelessWidget {
                 valueListenable: likeCounter,
                 builder: (context, count, child) {
                   return Text(
-                    "likes: $count",
+                    'likes: $count',
                     style: const TextStyle(fontSize: 14),
                   );
                 },

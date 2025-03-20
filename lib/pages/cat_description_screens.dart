@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/cat.dart';
 
 class CatDetailsScreen extends StatelessWidget {
-  final Cat cat;
-
   const CatDetailsScreen({super.key, required this.cat});
+
+  final Cat cat;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(cat.breedName),
-      ),
+      appBar: AppBar(title: Text(cat.breedName)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -23,7 +22,7 @@ class CatDetailsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withAlpha(77),
                     blurRadius: 10,
                     offset: const Offset(0, 6),
                   ),
@@ -31,15 +30,22 @@ class CatDetailsScreen extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  cat.imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: cat.imageUrl,
                   height: 300,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 300,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image_not_supported, size: 60),
-                  ),
+                  placeholder:
+                      (context, url) => Container(
+                        height: 300,
+                        color: Colors.grey[300],
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                  errorWidget:
+                      (context, url, error) => Container(
+                        height: 300,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image_not_supported, size: 60),
+                      ),
                 ),
               ),
             ),
@@ -83,7 +89,11 @@ class CatDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBlock({required IconData icon, required String title, required String content}) {
+  Widget _buildInfoBlock({
+    required IconData icon,
+    required String title,
+    required String content,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -108,10 +118,7 @@ class CatDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  content,
-                  style: const TextStyle(fontSize: 16),
-                ),
+                Text(content, style: const TextStyle(fontSize: 16)),
               ],
             ),
           ),
