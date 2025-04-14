@@ -5,7 +5,7 @@ import '../services/cat_api_services.dart';
 import '../models/cat.dart';
 import '../pages/favorite_cats.dart';
 import '../widgets/like_dislike_button.dart';
-import '../pages/loading_screen.dart';
+import '../presentation/screens/loading_screen.dart';
 import '../pages/cat_description_screens.dart';
 
 class HomeScreen extends StatefulWidget {
