@@ -55,15 +55,15 @@ Cat Tinder — это увлекательное приложение, кото�
 
 | Основной экран | Детальная информация |
 | --- | --- |
-| <img src="screenshots/home_screen.jpg" alt="Основной экран" width="300" /> | <img src="screenshots/description_screen.jpg" alt="Детальная информация" width="300" /> |
+| <img src="assets/screenshots/home_screen.jpg" alt="Основной экран" width="300" /> | <img src="assets/screenshots/description_screen.jpg" alt="Детальная информация" width="300" /> |
 
 | Понравившиеся котики | Поиск по понравившимся |
 | --- | --- |
-| <img src="screenshots/favorite_screen.jpg" alt="Понравившиеся котики" width="300" /> | <img src="screenshots/search.jpg" alt="Поиск" width="300" /> |
+| <img src="assets/screenshots/favorite_screen.jpg" alt="Понравившиеся котики" width="300" /> | <img src="assets/screenshots/search.jpg" alt="Поиск" width="300" /> |
 
 | Ошибка сети | Состояние ошибки | Загрузка |
 | --- | --- | --- |
-| <img src="screenshots/alert.jpg" alt="Ошибка сети" width="300" /> | <img src="screenshots/error_state.jpg" alt="Состояние ошибки" width="300" /> | <img src="screenshots/loading_screen.jpg" alt="Загрузка" width="300" /> |
+| <img src="assets/screenshots/alert.jpg" alt="Ошибка сети" width="300" /> | <img src="assets/screenshots/error_state.jpg" alt="Состояние ошибки" width="300" /> | <img src="assets/screenshots/loading_screen.jpg" alt="Загрузка" width="300" /> |
 
 
 Скачать приложение
