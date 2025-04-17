@@ -1,118 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../services/cat_api_services.dart';
-import '../models/cat.dart';
-import '../pages/favorite_cats.dart';
+import '../../domain/entities/cat.dart';
+import 'loading_screen.dart';
+import '../cubit/home_cubit.dart';
+import '../cubit/liked_cats_cubit.dart';
+import '../cubit/home_state.dart';
 import '../widgets/like_dislike_button.dart';
-import '../pages/loading_screen.dart';
-import '../pages/cat_description_screens.dart';
+import '../screens/cat_description_screen.dart';
+import '../screens/liked_cats_screen.dart';
+import '../dialogs/error_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  HomeScreenState createState() => HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen>
+class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  final ValueNotifier<List<Cat>> _likedCatsNotifier = ValueNotifier([]);
-  final ValueNotifier<int> _likeCounter = ValueNotifier(0);
-  final ValueNotifier<int> _dislikeCounter = ValueNotifier(0);
-
-  Cat? _currentCat;
-  bool _isLoading = true;
-  String? _errorMessage;
   late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
-    _fetchNewCat();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeCubit>().loadCat();
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
-    _likedCatsNotifier.dispose();
-    _likeCounter.dispose();
-    _dislikeCounter.dispose();
     super.dispose();
   }
 
-  bool _isCatAlreadyLiked(Cat cat) {
-    return _likedCatsNotifier.value.any((likedCat) => likedCat.id == cat.id);
-  }
-
-  void _fetchNewCat() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final cat = await ApiService.fetchRandomCat();
-      if (cat == null) {
-        throw Exception('Failed to load a cat with breed.');
-      }
-      if (!mounted) return; // Check if widget is still in the tree
-      await precacheImage(NetworkImage(cat.imageUrl), context);
-      if (!mounted) return; // Check again before calling setState
-      setState(() {
-        _currentCat = cat;
-        _isLoading = false;
-      });
-
-      _animationController.forward(from: 0);
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _handleLike() {
-    if (_currentCat != null && !_isCatAlreadyLiked(_currentCat!)) {
-      _likedCatsNotifier.value = [..._likedCatsNotifier.value, _currentCat!];
-      _likeCounter.value++;
-    }
-    HapticFeedback.lightImpact();
-    _fetchNewCat();
-  }
-
-  void _handleDislike() {
-    _dislikeCounter.value++;
-    HapticFeedback.mediumImpact();
-    _fetchNewCat();
-  }
-
-  void _openDetails() {
-    if (_currentCat != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CatDetailsScreen(cat: _currentCat!),
-        ),
-      );
-    }
-  }
-
-  void _removeLike(Cat cat) {
-    setState(() {
-      _likedCatsNotifier.value =
-          _likedCatsNotifier.value
-              .where((likedCat) => likedCat.id != cat.id)
-              .toList();
-      _likeCounter.value--; // Уменьшаем счетчик лайков
-    });
+  void _openDetails(Cat cat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CatDetailsScreen(cat: cat)),
+    );
   }
 
   @override
@@ -134,11 +67,7 @@ class HomeScreenState extends State<HomeScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (context) => FavoritesScreen(
-                        likedCatsNotifier: _likedCatsNotifier,
-                        onRemoveLike: _removeLike,
-                      ),
+                  builder: (context) => const FavoritesScreen(),
                 ),
               );
             },
@@ -153,54 +82,59 @@ class HomeScreenState extends State<HomeScreen>
             end: Alignment.bottomRight,
           ),
         ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
-          child:
-              _isLoading
-                  ? const LoadingScreen()
-                  : _errorMessage != null
-                  ? _buildErrorMessage()
-                  : _buildContent(),
+        child: BlocConsumer<HomeCubit, HomeState>(
+          listener: (context, state) {
+            if (state is HomeError) {
+              showDialog(
+                context: context,
+                builder:
+                    (_) => ErrorDialog(
+                      message: state.message,
+                      onRetry: () {
+                        context.read<HomeCubit>().loadCat();
+                      },
+                    ),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is HomeLoading || state is HomeInitial) {
+              return const LoadingScreen();
+            } else if (state is HomeFatalError) {
+              return _buildFatalErrorState(state.message);
+            } else if (state is HomeLoaded) {
+              final homeCubit = context.read<HomeCubit>();
+              final favoritesCubit = context.watch<FavoritesCubit>();
+              _animationController.forward(from: 0);
+
+              if (state.cat.breedName.toLowerCase() == 'unknown') {
+                homeCubit.loadCat();
+                return const LoadingScreen();
+              }
+
+              return _buildContent(
+                state.cat,
+                homeCubit,
+                favoritesCubit,
+                state.likeCount,
+                state.dislikeCount,
+              );
+            }
+            return const Center(child: Text('Unknown state'));
+          },
         ),
       ),
     );
   }
 
-  Widget _buildErrorMessage() {
+  Widget _buildContent(
+    Cat cat,
+    HomeCubit homeCubit,
+    FavoritesCubit favoritesCubit,
+    int likeCount,
+    int dislikeCount,
+  ) {
     return Center(
-      key: const ValueKey('error'),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 60, color: Colors.red.shade400),
-          const SizedBox(height: 20),
-          Text(
-            _errorMessage!,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.red.shade400),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurpleAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            onPressed: _fetchNewCat,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text('Try again', style: TextStyle(fontSize: 16)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return Center(
-      key: const ValueKey('content'),
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
@@ -213,15 +147,20 @@ class HomeScreenState extends State<HomeScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 GestureDetector(
-                  onTap: _openDetails,
+                  onTap: () => _openDetails(cat),
                   child: Dismissible(
-                    key: ValueKey(_currentCat?.id ?? 'cat_card'),
+                    key: ValueKey(cat.id),
                     onDismissed: (direction) {
                       if (direction == DismissDirection.startToEnd) {
-                        _handleLike();
-                      } else if (direction == DismissDirection.endToStart) {
-                        _handleDislike();
+                        favoritesCubit.addFavorite(cat);
+                        homeCubit.onLike(cat);
+                        HapticFeedback.lightImpact();
+                      } else {
+                        homeCubit.incrementDislike();
+                        HapticFeedback.mediumImpact();
                       }
+                      HapticFeedback.selectionClick();
+                      homeCubit.loadCat();
                     },
                     background: Container(
                       decoration: BoxDecoration(
@@ -263,7 +202,7 @@ class HomeScreenState extends State<HomeScreen>
                               top: Radius.circular(20),
                             ),
                             child: CachedNetworkImage(
-                              imageUrl: _currentCat!.imageUrl,
+                              imageUrl: cat.imageUrl,
                               height: 300,
                               fit: BoxFit.cover,
                               placeholder:
@@ -281,7 +220,7 @@ class HomeScreenState extends State<HomeScreen>
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Text(
-                              _currentCat!.breedName,
+                              cat.breedName,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontSize: 24,
@@ -294,22 +233,18 @@ class HomeScreenState extends State<HomeScreen>
                               horizontal: 16,
                               vertical: 10,
                             ),
-                            child: ValueListenableBuilder<int>(
-                              valueListenable: _likeCounter,
-                              builder: (context, likeCount, _) {
-                                return ValueListenableBuilder<int>(
-                                  valueListenable: _dislikeCounter,
-                                  builder: (context, dislikeCount, _) {
-                                    return LikeButtons(
-                                      onLike: _handleLike,
-                                      onDislike: _handleDislike,
-                                      likeCounter: _likeCounter,
-                                      dislikeCounter: _dislikeCounter,
-                                      isDisabled: _isLoading,
-                                    );
-                                  },
-                                );
+                            child: LikeButtons(
+                              onLike: () {
+                                favoritesCubit.addFavorite(cat);
+                                homeCubit.onLike(cat);
+                                homeCubit.loadCat();
                               },
+                              onDislike: () {
+                                homeCubit.incrementDislike();
+                                homeCubit.loadCat();
+                              },
+                              likeCount: likeCount,
+                              dislikeCount: dislikeCount,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -338,6 +273,30 @@ class HomeScreenState extends State<HomeScreen>
           Text(
             'Image not available',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFatalErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wifi_off, size: 80, color: Colors.redAccent),
+          const SizedBox(height: 20),
+          Text(
+            message,
+            style: const TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: () {
+              context.read<HomeCubit>().loadCat();
+            },
+            child: const Text('Try again'),
           ),
         ],
       ),
