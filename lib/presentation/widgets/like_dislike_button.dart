@@ -29,7 +29,10 @@ class LikeButtons extends StatelessWidget {
                 icon: const Icon(Icons.close, size: 40, color: Colors.pink),
                 onPressed: isDisabled ? null : onDislike,
               ),
-              Text('dislikes: $dislikeCount', style: const TextStyle(fontSize: 14)),
+              Text(
+                'dislikes: $dislikeCount',
+                style: const TextStyle(fontSize: 14),
+              ),
             ],
           ),
           Column(

@@ -4,11 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/home_cubit.dart';
 
 class ErrorDialog extends StatelessWidget {
-  const ErrorDialog({
-    super.key,
-    required this.message,
-    required this.onRetry,
-  });
+  const ErrorDialog({super.key, required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/entities/cat.dart';
 import '../../presentation/cubit/liked_cats_cubit.dart';
 import '../../presentation/screens/cat_description_screen.dart';
-import '../cubit/liked_cats_cubit.dart';
 import '../cubit/liked_cats_state.dart';
 import '../dialogs/error_dialog.dart';
 
@@ -13,6 +11,7 @@ class FavoritesScreen extends StatefulWidget {
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
+
 class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
@@ -28,11 +27,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             builder: (context, state) {
               final breeds = [
                 'All',
-                ...state.cats
-                    .map((e) => e.breedName)
-                    .toSet()
-                    .toList()
-                  ..sort()
+                ...state.cats.map((e) => e.breedName).toSet().toList()..sort(),
               ];
               return SizedBox(
                 width: 150,
@@ -45,16 +40,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       context.read<FavoritesCubit>().filterByBreed(value);
                     }
                   },
-                  items: breeds.map((breed) {
-                    return DropdownMenuItem<String>(
-                      value: breed,
-                      child: Text(
-                        breed,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    );
-                  }).toList(),
+                  items:
+                      breeds.map((breed) {
+                        return DropdownMenuItem<String>(
+                          value: breed,
+                          child: Text(
+                            breed,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        );
+                      }).toList(),
                 ),
               );
               // return DropdownButton<String>(
@@ -89,12 +85,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           if (state.error != null) {
             showDialog(
               context: context,
-              builder: (_) => ErrorDialog(
-                message: state.error!,
-                onRetry: () {
-                  context.read<FavoritesCubit>().reloadCats();
-                },
-              ),
+              builder:
+                  (_) => ErrorDialog(
+                    message: state.error!,
+                    onRetry: () {
+                      context.read<FavoritesCubit>().reloadCats();
+                    },
+                  ),
             );
           }
         },
@@ -102,7 +99,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           if (state.filteredCats.isEmpty) {
             return const Center(
               child: Text(
-                  'There are no liked cats 😿', style: TextStyle(fontSize: 18)),
+                'There are no liked cats 😿',
+                style: TextStyle(fontSize: 18),
+              ),
             );
           }
 
@@ -112,8 +111,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             itemBuilder: (context, index) {
               final cat = state.filteredCats[index];
               return GestureDetector(
-                onTap: () =>
-                    Navigator.push(
+                onTap:
+                    () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => CatDetailsScreen(cat: cat),
@@ -146,12 +145,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           return const SizedBox(
                             width: 60,
                             height: 60,
-                            child: Center(child: CircularProgressIndicator(
-                                strokeWidth: 2)),
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           );
                         },
-                        errorBuilder: (context, error, stackTrace) =>
-                            Container(
+                        errorBuilder:
+                            (context, error, stackTrace) => Container(
                               width: 60,
                               height: 60,
                               color: Colors.grey[300],
@@ -162,23 +162,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     title: Text(
                       cat.breedName,
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     subtitle: Text(
                       cat.likedAt != null
-                          ? 'Liked at: ${cat.likedAt!
-                          .toLocal()
-                          .toString()
-                          .split('.')[0]}'
+                          ? 'Liked at: ${cat.likedAt!.toLocal().toString().split('.')[0]}'
                           : 'No like date',
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () =>
-                          context
-                              .read<FavoritesCubit>()
-                              .removeFavorite(cat.id),
+                      onPressed:
+                          () => context.read<FavoritesCubit>().removeFavorite(
+                            cat.id,
+                          ),
                     ),
                   ),
                 ),

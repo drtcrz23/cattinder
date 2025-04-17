@@ -9,14 +9,7 @@ class FavoritesState extends Equatable {
     this.error,
   });
 
-  factory FavoritesState.initial() {
-    return const FavoritesState(
-      cats: [],
-      filteredCats: [],
-      selectedBreed: null,
-      error: null,
-    );
-  }
+  factory FavoritesState.initial() => const FavoritesState();
 
   final List<Cat> cats;
   final List<Cat> filteredCats;

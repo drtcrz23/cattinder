@@ -44,9 +44,7 @@ class _HomeScreenState extends State<HomeScreen>
   void _openDetails(Cat cat) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => CatDetailsScreen(cat: cat),
-      ),
+      MaterialPageRoute(builder: (context) => CatDetailsScreen(cat: cat)),
     );
   }
 
@@ -60,7 +58,11 @@ class _HomeScreenState extends State<HomeScreen>
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.pinkAccent, size: 30),
+            icon: const Icon(
+              Icons.favorite,
+              color: Colors.pinkAccent,
+              size: 30,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -85,12 +87,13 @@ class _HomeScreenState extends State<HomeScreen>
             if (state is HomeError) {
               showDialog(
                 context: context,
-                builder: (_) => ErrorDialog(
-                  message: state.message,
-                  onRetry: () {
-                    context.read<HomeCubit>().loadCat();
-                  },
-                ),
+                builder:
+                    (_) => ErrorDialog(
+                      message: state.message,
+                      onRetry: () {
+                        context.read<HomeCubit>().loadCat();
+                      },
+                    ),
               );
             }
           },
@@ -125,12 +128,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildContent(
-      Cat cat,
-      HomeCubit homeCubit,
-      FavoritesCubit favoritesCubit,
-      int likeCount,
-      int dislikeCount,
-      ) {
+    Cat cat,
+    HomeCubit homeCubit,
+    FavoritesCubit favoritesCubit,
+    int likeCount,
+    int dislikeCount,
+  ) {
     return Center(
       child: SingleChildScrollView(
         child: Padding(
@@ -166,7 +169,11 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.only(left: 30),
-                      child: const Icon(Icons.favorite, size: 40, color: Colors.green),
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 40,
+                        color: Colors.green,
+                      ),
                     ),
                     secondaryBackground: Container(
                       decoration: BoxDecoration(
@@ -175,7 +182,11 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 30),
-                      child: const Icon(Icons.close, size: 40, color: Colors.red),
+                      child: const Icon(
+                        Icons.close,
+                        size: 40,
+                        color: Colors.red,
+                      ),
                     ),
                     child: Card(
                       shape: RoundedRectangleBorder(
@@ -187,17 +198,23 @@ class _HomeScreenState extends State<HomeScreen>
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
                             child: CachedNetworkImage(
                               imageUrl: cat.imageUrl,
                               height: 300,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey[200],
-                                child: const Center(child: CircularProgressIndicator()),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  _buildPlaceholderImage(),
+                              placeholder:
+                                  (context, url) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                              errorWidget:
+                                  (context, url, error) =>
+                                      _buildPlaceholderImage(),
                             ),
                           ),
                           Padding(
@@ -205,11 +222,17 @@ class _HomeScreenState extends State<HomeScreen>
                             child: Text(
                               cat.breedName,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
                             child: LikeButtons(
                               onLike: () {
                                 favoritesCubit.addFavorite(cat);
@@ -222,7 +245,6 @@ class _HomeScreenState extends State<HomeScreen>
                               },
                               likeCount: likeCount,
                               dislikeCount: dislikeCount,
-                              isDisabled: false,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -248,7 +270,10 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Icon(Icons.image_not_supported, size: 60, color: Colors.grey[600]),
           const SizedBox(height: 10),
-          Text('Image not available', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+          Text(
+            'Image not available',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
         ],
       ),
     );

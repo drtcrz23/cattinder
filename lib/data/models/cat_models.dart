@@ -2,20 +2,13 @@ import '../../domain/entities/cat.dart';
 
 class CatModel extends Cat {
   CatModel({
-    required String id,
-    required String imageUrl,
-    required String breedName,
-    String? description,
-    String? temperament,
-    String? origin,
-  }) : super(
-    id: id,
-    imageUrl: imageUrl,
-    breedName: breedName,
-    description: description,
-    temperament: temperament,
-    origin: origin,
-  );
+    required super.id,
+    required super.imageUrl,
+    required super.breedName,
+    super.description,
+    super.temperament,
+    super.origin,
+  });
 
   factory CatModel.fromJson(Map<String, dynamic> json) {
     final breed = json['breeds']?[0];

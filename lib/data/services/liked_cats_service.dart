@@ -26,8 +26,6 @@ import '../../domain/entities/cat.dart';
 //   }
 // }
 
-
-
 class LikeService extends ChangeNotifier {
   final List<Cat> _likedCats = [];
 

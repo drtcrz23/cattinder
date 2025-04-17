@@ -25,6 +25,6 @@ Future<void> init() async {
   sl.registerFactory(() => FavoritesCubit(likeService: sl()));
 
   sl.registerFactoryParam<CatDetailsCubit, Cat, void>(
-        (cat, _) => CatDetailsCubit(cat),
+    (cat, _) => CatDetailsCubit(cat),
   );
 }

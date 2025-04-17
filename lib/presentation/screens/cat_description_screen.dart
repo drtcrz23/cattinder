@@ -32,12 +32,13 @@ class CatDetailsScreen extends StatelessWidget {
             if (state is CatDetailsError) {
               showDialog(
                 context: context,
-                builder: (_) => ErrorDialog(
-                  message: state.message,
-                  onRetry: () {
-                    context.read<CatDetailsCubit>().loadCat();
-                  },
-                ),
+                builder:
+                    (_) => ErrorDialog(
+                      message: state.message,
+                      onRetry: () {
+                        context.read<CatDetailsCubit>().loadCat();
+                      },
+                    ),
               );
             }
           },
@@ -105,16 +106,18 @@ class CatDetailsScreen extends StatelessWidget {
           imageUrl: imageUrl,
           height: 300,
           fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            height: 300,
-            color: Colors.grey[300],
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-          errorWidget: (context, url, error) => Container(
-            height: 300,
-            color: Colors.grey[300],
-            child: const Icon(Icons.image_not_supported, size: 60),
-          ),
+          placeholder:
+              (context, url) => Container(
+                height: 300,
+                color: Colors.grey[300],
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+          errorWidget:
+              (context, url, error) => Container(
+                height: 300,
+                color: Colors.grey[300],
+                child: const Icon(Icons.image_not_supported, size: 60),
+              ),
         ),
       ),
     );

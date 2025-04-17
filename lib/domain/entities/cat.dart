@@ -1,5 +1,4 @@
 class Cat {
-
   Cat({
     required this.id,
     required this.imageUrl,

@@ -1,16 +1,14 @@
 import 'package:bloc/bloc.dart';
-import 'package:cattinder/presentation/cubit/home_cubit.dart';
 import '../../data/services/liked_cats_service.dart';
 import '../../domain/entities/cat.dart';
 import 'liked_cats_state.dart';
 
 class FavoritesCubit extends Cubit<FavoritesState> {
-  // FavoritesCubit({required this.homeCubit}) : super(FavoritesState.initial());
-  // final HomeCubit homeCubit;
-
-  FavoritesCubit({required this.likeService}) : super(FavoritesState.initial()){
+  FavoritesCubit({required this.likeService})
+    : super(FavoritesState.initial()) {
     _init();
   }
+
   final LikeService likeService;
 
   void _init() {
@@ -22,16 +20,12 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     final liked = likeService.likedCats;
     final selected = state.selectedBreed;
 
-    final filtered = selected == null || selected == 'All'
-        ? liked
-        : liked.where((cat) => cat.breedName == selected).toList();
+    final filtered =
+        selected == null || selected == 'All'
+            ? liked
+            : liked.where((cat) => cat.breedName == selected).toList();
 
-    emit(
-      state.copyWith(
-        cats: liked,
-        filteredCats: filtered,
-      ),
-    );
+    emit(state.copyWith(cats: liked, filteredCats: filtered));
   }
 
   void addFavorite(Cat cat) {
@@ -87,7 +81,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   }
 
   void clearError() {
-    emit(state.copyWith(error: null));
+    emit(state.copyWith());
   }
 
   List<Cat> _applyFilter(List<Cat> cats, String? breed) {
