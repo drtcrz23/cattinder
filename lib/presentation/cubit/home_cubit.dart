@@ -1,115 +1,131 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/entities/cat.dart';
-import '../../../domain/usecases/get_random_cat_usecase.dart';
+import '../../../domain/usecases/get_cats_batch_usecase.dart';
 import '../../data/services/liked_cats_service.dart';
+import '../../data/services/network_service.dart';
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  // HomeCubit(this.getRandomCat) : super(HomeInitial());
-  // final GetRandomCatUseCase getRandomCat;
-  HomeCubit(this.getRandomCat, this.likeService) : super(HomeInitial()) {
-    _init();
+  HomeCubit(this._getCatsBatch, this._likeService, this._networkService)
+    : super(HomeInitial()) {
+    _likeService.addListener(_onLikesChanged);
+    _loadInitialBatch();
   }
 
-  final GetRandomCatUseCase getRandomCat;
-  final LikeService likeService;
+  final GetCatsBatchUseCase _getCatsBatch;
+  final LikeService _likeService;
+  final NetworkService _networkService;
 
-  void _init() {
-    likeService.addListener(_onLikesChanged);
+  final List<Cat> _catsPool = [];
+  int _dislikeCount = 0;
+  bool _offlineExhausted = false;
+
+  Future<void> _loadInitialBatch() async {
+    emit(HomeLoading());
+    try {
+      await _fetchBatch();
+      _showNext();
+    } catch (e) {
+      emit(HomeError('Failed to load cats: $e'));
+    }
+  }
+
+  Future<void> _fetchBatch() async {
+    final hasConn = await _networkService.isConnected;
+    if (!hasConn && _offlineExhausted) return;
+    final batch = await _getCatsBatch(10);
+    if (!hasConn) _offlineExhausted = true;
+    _catsPool.addAll(batch);
+  }
+
+  Future<void> loadCat() async {
+    if (state is HomeInitial) {
+      await _loadInitialBatch();
+    } else {
+      final hasConnection = await _networkService.isConnected;
+      if (!hasConnection && _offlineExhausted) {
+        emit(
+          HomeError(
+            'Failed to load cat. Please check your internet connection.',
+          ),
+        );
+        return;
+      }
+      await nextCat();
+    }
+  }
+
+  Future<void> nextCat() async {
+    if (_catsPool.isEmpty) {
+      final hasConn = await _networkService.isConnected;
+      if (!hasConn && _offlineExhausted) {
+        emit(HomeFatalError('No internet connection. Try again later.'));
+        return;
+      }
+      emit(HomeLoading());
+      try {
+        await _fetchBatch();
+      } catch (_) {
+        emit(
+          HomeError(
+            'Failed to load cat. Please check your internet connection.',
+          ),
+        );
+        return;
+      }
+    }
+    _showNext();
+  }
+
+  void _showNext() {
+    if (_catsPool.isEmpty) {
+      emit(HomeFatalError('No cats available.'));
+      return;
+    }
+    final next = _catsPool.removeAt(0);
+    emit(
+      HomeLoaded(
+        currentCat: next,
+        likeCount: _likeService.likeCount,
+        dislikeCount: _dislikeCount,
+      ),
+    );
+  }
+
+  void likeCurrentCat() {
+    if (state is HomeLoaded) {
+      _likeService.addLike((state as HomeLoaded).currentCat);
+      nextCat();
+    }
+  }
+
+  void dislikeCurrentCat() {
+    _dislikeCount++;
+    nextCat();
+  }
+
+  void resetCounters() {
+    _catsPool.clear();
+    _dislikeCount = 0;
+    _offlineExhausted = false;
+    _likeService.clearLikes();
+    nextCat();
   }
 
   void _onLikesChanged() {
-    _refreshState();
+    if (state is HomeLoaded) {
+      final s = state as HomeLoaded;
+      emit(s.copyWith(likeCount: _likeService.likeCount));
+    }
   }
 
-  int _likeCount = 0;
-  int _dislikeCount = 0;
-
-  Future<void> loadCat() async {
-    emit(HomeLoading());
-
-    try {
-      Cat? cat;
-      int tries = 0;
-      const maxTries = 10;
-      while (tries < maxTries) {
-        cat = await getRandomCat();
-        if (cat != null &&
-            cat.breedName.trim().isNotEmpty &&
-            cat.breedName.toLowerCase() != 'unknown') {
-          break;
-        }
-        tries++;
-      }
-
-      if (cat == null ||
-          cat.breedName.trim().isEmpty ||
-          cat.breedName.toLowerCase() == 'unknown') {
-        emit(HomeError('Could not find a cat with the specified breed.'));
-      } else {
-        emit(
-          HomeLoaded(
-            cat,
-            likeCount: likeService.likeCount,
-            dislikeCount: _dislikeCount,
-          ),
-        );
-      }
-    } catch (_) {
-      emit(
-        HomeError('Failed to load cat. Please check your internet connection.'),
-      );
-    }
+  @override
+  Future<void> close() {
+    _likeService.removeListener(_onLikesChanged);
+    return super.close();
   }
 
   void cancelLoading() {
     emit(HomeFatalError('No internet connection. Try again later.'));
-  }
-
-  void onLike(Cat cat) {
-    likeService.addLike(cat);
-    _refreshState();
-  }
-
-  void _refreshState() {
-    if (state is HomeLoaded) {
-      final current = state as HomeLoaded;
-      emit(
-        HomeLoaded(
-          current.cat,
-          likeCount: likeService.likeCount,
-          dislikeCount: _dislikeCount,
-        ),
-      );
-    }
-  }
-
-  void decrementLike() {
-    if (_likeCount > 0) _likeCount--;
-    _refreshLikeDislikeState();
-  }
-
-  void incrementDislike() {
-    _dislikeCount++;
-    _refreshLikeDislikeState();
-  }
-
-  void _refreshLikeDislikeState() {
-    if (state is HomeLoaded) {
-      final current = state as HomeLoaded;
-      emit(
-        HomeLoaded(
-          current.cat,
-          likeCount: _likeCount,
-          dislikeCount: _dislikeCount,
-        ),
-      );
-    }
-  }
-
-  void resetCounters() {
-    likeService.clearLikes();
-    _dislikeCount = 0;
-    _refreshState();
   }
 }

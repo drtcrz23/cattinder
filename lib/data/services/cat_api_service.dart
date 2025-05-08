@@ -24,8 +24,20 @@ class ApiService {
     }
   }
 
-  // static Future<CatModel?> fetchRandomCat() async {
-  //   final cats = await fetchRandomCats();
-  //   return cats.isNotEmpty ? cats.first : null;
-  // }
+  Future<List<CatModel>> fetchRandomCatsBatch({int limit = 10}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl?has_breeds=1&limit=$limit'),
+      headers: {'x-api-key': _apiKey},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map((jsonMap) => CatModel.fromJson(jsonMap))
+          .toList();
+    } else {
+      throw Exception('Failed to load batch of cats: ${response.statusCode}');
+    }
+  }
 }

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
+import '../../data/services/network_service.dart';
 import '../../domain/entities/cat.dart';
+import '../cubit/liked_cats_state.dart';
 import 'loading_screen.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/liked_cats_cubit.dart';
@@ -22,6 +25,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  bool _isOnline = true;
 
   @override
   void initState() {
@@ -30,6 +34,10 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+
+    _checkInitialNetworkStatus();
+    _subscribeToNetworkChanges();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomeCubit>().loadCat();
     });
@@ -48,6 +56,53 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  void _checkInitialNetworkStatus() async {
+    final networkService = NetworkService();
+    _isOnline = await networkService.isConnected;
+    if (!_isOnline) {
+      _showSnackBar('Offline mode');
+    } else {
+      _showSnackBar('Online mode');
+    }
+  }
+
+  void _subscribeToNetworkChanges() {
+    final networkService = NetworkService();
+    networkService.connectivityStream.listen((isConnected) {
+      if (_isOnline != isConnected) {
+        setState(() {
+          _isOnline = isConnected;
+        });
+        _showSnackBar(_isOnline ? 'Online mode' : 'Offline mode');
+      }
+    });
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration:
+            message.contains('Offline')
+                ? const Duration(days: 365)
+                : const Duration(seconds: 5),
+        backgroundColor:
+            message.contains('Offline') ? Colors.red : Colors.green,
+        action:
+            message.contains('Offline')
+                ? SnackBarAction(
+                  label: 'OK',
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                )
+                : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,18 +112,56 @@ class _HomeScreenState extends State<HomeScreen>
         backgroundColor: Colors.white.withAlpha(230),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.favorite,
-              color: Colors.pinkAccent,
-              size: 30,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FavoritesScreen(),
-                ),
+          BlocBuilder<FavoritesCubit, FavoritesState>(
+            builder: (context, state) {
+              final likeCount = state.cats.length;
+
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.favorite,
+                      color: Colors.pinkAccent,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoritesScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (likeCount > 0)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$likeCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),
@@ -91,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen>
                     (_) => ErrorDialog(
                       message: state.message,
                       onRetry: () {
-                        context.read<HomeCubit>().loadCat();
+                        context.read<HomeCubit>().nextCat();
                       },
                     ),
               );
@@ -106,14 +199,8 @@ class _HomeScreenState extends State<HomeScreen>
               final homeCubit = context.read<HomeCubit>();
               final favoritesCubit = context.watch<FavoritesCubit>();
               _animationController.forward(from: 0);
-
-              if (state.cat.breedName.toLowerCase() == 'unknown') {
-                homeCubit.loadCat();
-                return const LoadingScreen();
-              }
-
               return _buildContent(
-                state.cat,
+                state.currentCat,
                 homeCubit,
                 favoritesCubit,
                 state.likeCount,
@@ -153,14 +240,13 @@ class _HomeScreenState extends State<HomeScreen>
                     onDismissed: (direction) {
                       if (direction == DismissDirection.startToEnd) {
                         favoritesCubit.addFavorite(cat);
-                        homeCubit.onLike(cat);
+                        homeCubit.likeCurrentCat();
                         HapticFeedback.lightImpact();
                       } else {
-                        homeCubit.incrementDislike();
+                        homeCubit.dislikeCurrentCat();
                         HapticFeedback.mediumImpact();
                       }
                       HapticFeedback.selectionClick();
-                      homeCubit.loadCat();
                     },
                     background: Container(
                       decoration: BoxDecoration(
@@ -215,6 +301,7 @@ class _HomeScreenState extends State<HomeScreen>
                               errorWidget:
                                   (context, url, error) =>
                                       _buildPlaceholderImage(),
+                              key: ValueKey(cat.imageUrl),
                             ),
                           ),
                           Padding(
@@ -228,24 +315,29 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            child: LikeButtons(
-                              onLike: () {
-                                favoritesCubit.addFavorite(cat);
-                                homeCubit.onLike(cat);
-                                homeCubit.loadCat();
-                              },
-                              onDislike: () {
-                                homeCubit.incrementDislike();
-                                homeCubit.loadCat();
-                              },
-                              likeCount: likeCount,
-                              dislikeCount: dislikeCount,
-                            ),
+                          BlocBuilder<HomeCubit, HomeState>(
+                            builder: (context, state) {
+                              if (state is HomeLoaded) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  child: LikeButtons(
+                                    onLike: () {
+                                      favoritesCubit.addFavorite(cat);
+                                      homeCubit.likeCurrentCat();
+                                    },
+                                    onDislike: () {
+                                      homeCubit.dislikeCurrentCat();
+                                    },
+                                    likeCount: state.likeCount,
+                                    dislikeCount: state.dislikeCount,
+                                  ),
+                                );
+                              }
+                              return const SizedBox();
+                            },
                           ),
                           const SizedBox(height: 10),
                         ],
