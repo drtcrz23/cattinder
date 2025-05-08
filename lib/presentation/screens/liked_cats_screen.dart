@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../presentation/cubit/liked_cats_cubit.dart';
@@ -135,25 +136,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     contentPadding: const EdgeInsets.all(12),
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        cat.imageUrl,
+                      child: CachedNetworkImage(
+                        imageUrl: cat.imageUrl,
+                        cacheKey: cat.imageUrl,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const SizedBox(
-                            width: 60,
-                            height: 60,
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                        placeholder:
+                            (context, url) => Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
                             ),
-                          );
-                        },
-                        errorBuilder:
-                            (context, error, stackTrace) => Container(
-                              width: 60,
-                              height: 60,
+                        errorWidget:
+                            (context, url, error) => Container(
                               color: Colors.grey[300],
                               child: const Icon(Icons.image_not_supported),
                             ),
